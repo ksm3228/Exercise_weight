@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>데이터 마이그레이션</title>
+<style>
+  body{font-family:-apple-system,sans-serif;max-width:500px;margin:60px auto;padding:20px;background:#f5f5f5}
+  .card{background:#fff;border-radius:12px;padding:28px;border:1px solid #e0e0e0}
+  h1{font-size:18px;font-weight:500;margin-bottom:8px}
+  p{font-size:13px;color:#666;margin-bottom:24px;line-height:1.6}
+  button{width:100%;padding:12px;background:#185FA5;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:500;cursor:pointer}
+  button:hover{background:#0C447C}
+  button:disabled{background:#ccc;cursor:default}
+  .log{margin-top:20px;background:#f8f8f8;border:1px solid #e0e0e0;border-radius:8px;padding:14px;font-size:12px;font-family:monospace;line-height:1.8;max-height:300px;overflow-y:auto;display:none}
+  .ok{color:#27500A}.err{color:#A32D2D}.info{color:#185FA5}
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>📦 기존 데이터 Firebase 업로드</h1>
+  <p>1월~5월 운동·체중 기록 전체를 Firebase에 한 번에 저장합니다.<br>
+  Google 로그인 후 버튼을 누르세요.</p>
+  <button id="btn" onclick="run()">Google 로그인 후 업로드 시작</button>
+  <div class="log" id="log"></div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getFirestore, doc, setDoc }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey:            "AIzaSyC9k6iGUcNObjxQGtlVOuP5_YSpErT9DtA",
+  authDomain:        "ward-app-257c4.firebaseapp.com",
+  projectId:         "ward-app-257c4",
+  storageBucket:     "ward-app-257c4.firebasestorage.app",
+  messagingSenderId: "261869081149",
+  appId:             "1:261869081149:web:f031aba266139f76861054"
+};
+
+const app  = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db   = getFirestore(app);
+
+const HISTORICAL_DATA = {
+  "2026-01-05":{run:{km:0,min:0,label:"걷기",type:"걷기"}},
+  "2026-01-10":{run:{km:7,min:10,label:"7km(10분)",type:"달리기"}},
+  "2026-01-11":{run:{km:7,min:15,label:"7km(15분)",type:"달리기"}},
+  "2026-01-12":{run:{km:7,min:15,label:"7km(15분)",type:"달리기"}},
+  "2026-01-13":{run:{km:7,min:16,label:"7km(16분)",type:"달리기"}},
+  "2026-01-15":{run:{km:7,min:22,label:"7km(22분)",type:"달리기"}},
+  "2026-01-18":{run:{km:4.8,min:40,label:"4.8km(40분)",type:"달리기"}},
+  "2026-01-24":{run:{km:3.5,min:30,label:"3.5km(30분)",type:"달리기"}},
+  "2026-01-25":{run:{km:4,min:35,label:"4km(35분)",type:"달리기"}},
+  "2026-02-01":{run:{km:3.5,min:30,label:"3.5km(30분)",type:"달리기"}},
+  "2026-02-05":{run:{km:7,min:21,label:"7km(21분)",type:"달리기"}},
+  "2026-02-06":{run:{km:7,min:32,label:"7km(32분)",type:"달리기"}},
+  "2026-02-07":{run:{km:7,min:41,label:"7km(41분)",type:"달리기"}},
+  "2026-02-08":{run:{km:5,min:43,label:"5km(43분)",type:"달리기"},weight:81.8,bmi:26.4},
+  "2026-02-11":{run:{km:3.5,min:30,label:"3.5km(30분)",type:"달리기"}},
+  "2026-02-14":{run:{km:4,min:35,label:"4km(35분)",type:"달리기"}},
+  "2026-02-15":{run:{km:6,min:50,label:"6km(50분)",type:"달리기"},weight:81.8,bmi:26.4},
+  "2026-02-16":{run:{km:5,min:40,label:"5km(40분)",type:"달리기"}},
+  "2026-02-18":{run:{km:6,min:50,label:"6km(50분)",type:"달리기"}},
+  "2026-02-21":{run:{km:7,min:52,label:"7km(52분)",type:"달리기"}},
+  "2026-02-22":{run:{km:5.2,min:45,label:"5.2km(45분)",type:"달리기"}},
+  "2026-02-28":{run:{km:5.2,min:45,label:"5.2km(45분)",type:"달리기"},weight:80.5,bmi:26.1},
+  "2026-03-01":{run:{km:5.2,min:45,label:"5.2km(45분)",type:"달리기"}},
+  "2026-03-02":{run:{km:7,min:60,label:"7km(60분)",type:"달리기"}},
+  "2026-03-07":{run:{km:10,min:80,label:"10km(80분)",type:"달리기"}},
+  "2026-03-14":{run:{km:6,min:50,label:"6km(50분)",type:"달리기"}},
+  "2026-03-21":{run:{km:7,min:60,label:"7km(60분)",type:"달리기"}},
+  "2026-03-22":{run:{km:4.8,min:40,label:"4.8km(40분)",type:"달리기"}},
+  "2026-03-25":{run:{km:6,min:50,label:"6km(50분)",type:"달리기"}},
+  "2026-03-26":{run:{km:3.5,min:30,label:"3.5km(30분)",type:"달리기"}},
+  "2026-03-28":{run:{km:5.2,min:45,label:"5.2km(45분)",type:"달리기"}},
+  "2026-03-29":{run:{km:4.8,min:40,label:"4.8km(40분)",type:"달리기"},weight:82.1,bmi:26.8},
+  "2026-04-05":{run:{km:6,min:50,label:"6km(50분)",type:"달리기"}},
+  "2026-04-06":{run:{km:4.9,min:42,label:"4.9km(42분)",type:"달리기"}},
+  "2026-04-07":{weight:82.1,bmi:26.8},
+  "2026-04-08":{weight:81.9,bmi:26.4},
+  "2026-04-09":{run:{km:5.2,min:45,label:"5.2km(45분)",type:"달리기"},weight:81.8,bmi:26.4},
+  "2026-04-10":{weight:81.7,bmi:26.4},
+  "2026-04-12":{run:{km:5,min:43,label:"5km(43분)",type:"달리기"}},
+  "2026-04-13":{weight:81.7,bmi:26.4},
+  "2026-04-14":{run:{km:3,min:26,label:"3km(26분)",type:"달리기"},weight:81.5,bmi:26.4},
+  "2026-04-15":{run:{km:3.5,min:30,label:"3.5km(30분)",type:"달리기"},weight:81.4,bmi:26.4},
+  "2026-04-16":{weight:82.2,bmi:26.8},
+  "2026-04-17":{weight:81.6,bmi:26.4},
+  "2026-04-18":{run:{km:5.5,min:46,label:"5.5km(46분)",type:"달리기"}},
+  "2026-04-19":{run:{km:5,min:43,label:"5km(43분)",type:"달리기"},weight:80.7,bmi:26.1},
+  "2026-04-20":{weight:82,bmi:26.8},
+  "2026-04-21":{weight:82.2,bmi:26.8},
+  "2026-04-22":{weight:82.1,bmi:26.8},
+  "2026-04-23":{weight:82.4,bmi:26.8},
+  "2026-04-25":{run:{km:5,min:43,label:"5km(43분)",type:"달리기"},weight:81.7,bmi:26.4},
+  "2026-04-26":{run:{km:5,min:43,label:"5km(43분)",type:"달리기"},weight:80.5,bmi:26.1},
+  "2026-05-01":{run:{km:5,min:43,label:"5km(43분)",type:"달리기"},weight:80.6,bmi:26.1},
+  "2026-05-02":{run:{km:5,min:43,label:"5km(43분)",type:"달리기"},weight:79.7,bmi:25.8},
+  "2026-05-07":{weight:81,bmi:26.4},
+  "2026-05-09":{run:{km:5,min:43,label:"5km(43분)",type:"달리기"},weight:79.9,bmi:25.8},
+  "2026-05-10":{run:{km:5,min:43,label:"5km(43분)",type:"달리기"},weight:79.5,bmi:25.8},
+  "2026-05-16":{run:{km:5.5,min:46,label:"5.5km(46분)",type:"달리기"},weight:80.4,bmi:26.1},
+  "2026-05-18":{run:{km:6,min:50,label:"6km(50분)",type:"달리기"}},
+  "2026-05-23":{run:{km:7,min:15,label:"7km(15분)",type:"달리기"},weight:80.4,bmi:26.1},
+  "2026-05-24":{run:{km:5,min:43,label:"5km(43분)",type:"달리기"}},
+  "2026-05-30":{run:{km:4.8,min:40,label:"4.8km(40분)",type:"달리기"}},
+  "2026-05-31":{run:{km:5.2,min:45,label:"5.2km(45분)",type:"달리기"}},
+  "2026-06-01":{run:{km:7,min:22,label:"7km(22분)",type:"달리기"}}
+};
+
+function log(msg, cls='info'){
+  const el = document.getElementById('log');
+  el.style.display = 'block';
+  el.innerHTML += `<div class="${cls}">${msg}</div>`;
+  el.scrollTop = el.scrollHeight;
+}
+
+window.run = async () => {
+  const btn = document.getElementById('btn');
+  btn.disabled = true;
+  btn.textContent = '로그인 중…';
+  try {
+    const provider = new GoogleAuthProvider();
+    const result = await signInWithPopup(auth, provider);
+    const uid = result.user.uid;
+    log(`✓ 로그인: ${result.user.displayName || result.user.email}`, 'ok');
+    btn.textContent = '업로드 중…';
+    const entries = Object.entries(HISTORICAL_DATA);
+    log(`총 ${entries.length}개 항목 업로드 시작…`);
+    let ok = 0, fail = 0;
+    for(const [key, data] of entries){
+      try {
+        await setDoc(doc(db, 'users', uid, 'entries', key), data);
+        log(`✓ ${key}`, 'ok');
+        ok++;
+      } catch(e) {
+        log(`✗ ${key}: ${e.message}`, 'err');
+        fail++;
+      }
+    }
+    log(`━━━━━━━━━━━━━━━━━━━━`, 'info');
+    log(`완료: 성공 ${ok}개 / 실패 ${fail}개`, fail===0?'ok':'err');
+    btn.textContent = fail===0 ? '✓ 업로드 완료! 앱으로 돌아가세요' : '일부 실패 — 로그 확인';
+  } catch(e) {
+    log(`오류: ${e.message}`, 'err');
+    btn.disabled = false;
+    btn.textContent = '다시 시도';
+  }
+};
+</script>
+</body>
+</html>
