@@ -466,9 +466,14 @@ function renderCal(){
     if(HOLIDAYS[k]) html+=`<div class="holiday-label">${HOLIDAYS[k]}</div>`;
     if(info.run){runCount++;if(info.run.km>0)totalKm+=info.run.km;html+=`<div class="t-run">${info.run.label}</div>`;}
     if(info.strength&&info.strength.length>0){
-      const names=[...new Set(info.strength.map(s=>s.name))].join('·');
-      html+=`<div class="t-strength">💪 ${names}</div>`;
-    }
+  const grouped={};
+  info.strength.forEach(s=>{
+    if(!grouped[s.name]) grouped[s.name]=0;
+    if(s.kg>grouped[s.name]) grouped[s.name]=s.kg;
+  });
+  const summary=Object.entries(grouped).map(([n,kg])=>kg>0?`${n} ${kg}kg`:n).join('·');
+  html+=`<div class="t-strength">💪 ${summary}</div>`;
+}
     if(info.weight){weights.push(info.weight);html+=`<div class="t-wt">${info.weight}kg</div>`;}
     if(info.bmi) html+=`<div class="t-bmi">BMI ${parseFloat(info.bmi).toFixed(1)}</div>`;
     cell.innerHTML=html; grid.appendChild(cell);
