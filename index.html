@@ -524,7 +524,8 @@ function renderDash(){
     <div class="ds"><div class="ds-label">운동 횟수</div><div class="ds-val">${allRuns.length}회</div><div class="ds-delta dn2">평균 ${avgKm.toFixed(1)}km/회</div></div>
     <div class="ds"><div class="ds-label">총 거리</div><div class="ds-val">${totalKm.toFixed(1)}km</div></div>
     <div class="ds"><div class="ds-label">첫 기록 체중</div><div class="ds-val">${firstW?firstW+'kg':'—'}</div></div>
-    <div class="ds"><div class="ds-label">체중 변화</div><div class="ds-val">${lastW?lastW+'kg':'—'}</div>
+    <div class="ds"><div class="ds-label">체중 변화</div><div class="ds-val">${lastW?lastW+'kg':'—'}</div><div class="ds-delta ${diff&&parseFloat(diff)<0?'dg':'db'}">${diff?(parseFloat(diff)>0?'+':'')+diff+'kg':'—'}</div></div>
+    <div class="ds"><div class="ds-label">최저 체중</div><div class="ds-val" style="color:var(--green-dark)">${allWts.length?Math.min(...allWts.map(([,v])=>v.weight))+'kg':'—'}</div></div>`;
       <div class="ds-delta ${diff&&parseFloat(diff)<0?'dg':'db'}">${diff?(parseFloat(diff)>0?'+':'')+diff+'kg':'—'}</div></div>`;
   document.getElementById('log-list').innerHTML=allRuns.map(([k,v])=>{
     const d=new Date(k+'T00:00:00');
