@@ -65,6 +65,7 @@
   .t-bmi{font-size:10px;color:var(--text3);padding:1px 0}
   .t-strength{font-size:10px;background:#F3EAF9;color:#5B2D8E;border-radius:4px;padding:2px 4px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .holiday-label{font-size:9px;color:var(--red);font-weight:500;margin-bottom:2px}
+  .dc.min-weight{border:2px solid var(--red)!important;border-radius:var(--radius)!important;}
   .cal-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px}
   .cs{background:var(--bg2);border-radius:var(--radius);padding:10px 12px}
   .cs-label{font-size:11px;color:var(--text2);margin-bottom:4px}
@@ -455,7 +456,10 @@ function renderCal(){
   const grid = document.getElementById('cal-grid'); grid.innerHTML = '';
   const fd = firstDow(curYear,curMonth), days = daysInMonth(curYear,curMonth);
   for(let i=0;i<fd;i++){const e=document.createElement('div');e.className='dc empty';grid.appendChild(e);}
-  let runCount=0, totalKm=0, weights=[];
+  const allTimeMinW = Object.values(DATA).filter(v=>v.weight).length
+    ? Math.min(...Object.values(DATA).filter(v=>v.weight).map(v=>v.weight))
+    : null;
+ let runCount=0, totalKm=0, weights=[];
   for(let d=1;d<=days;d++){
     const k=key(curYear,curMonth,d), info=DATA[k]||{}, dow=(fd+d-1)%7;
     const isToday=todayObj.getFullYear()===curYear&&todayObj.getMonth()+1===curMonth&&todayObj.getDate()===d;
@@ -463,6 +467,7 @@ function renderCal(){
     if(dow===0)cls+=' sun'; if(dow===6)cls+=' sat';
     if(info.run||info.strength)cls+=' has-run';
     if(isToday)cls+=' today';
+    if(info.weight&&info.weight===allTimeMinW)cls+=' min-weight';
     const cell=document.createElement('div'); cell.className=cls;
     cell.setAttribute('role','button'); cell.onclick=()=>openModal(k);
     let html=`<div class="dn">${d}</div>`;
@@ -525,7 +530,7 @@ function renderDash(){
     <div class="ds"><div class="ds-label">총 거리</div><div class="ds-val">${totalKm.toFixed(1)}km</div></div>
     <div class="ds"><div class="ds-label">첫 기록 체중</div><div class="ds-val">${firstW?firstW+'kg':'—'}</div></div>
     <div class="ds"><div class="ds-label">체중 변화</div><div class="ds-val">${lastW?lastW+'kg':'—'}</div><div class="ds-delta ${diff&&parseFloat(diff)<0?'dg':'db'}">${diff?(parseFloat(diff)>0?'+':'')+diff+'kg':'—'}</div></div>
-    <div class="ds"><div class="ds-label">최저 체중</div><div class="ds-val" style="color:var(--green-dark)">${allWts.length?Math.min(...allWts.map(([,v])=>v.weight))+'kg':'—'}</div></div>`;
+    <div class="ds"><div class="ds-label">최저 체중</div><div class="ds-val" style="color:var(--green-dark)">${allWts.length?Math.min(...allWts.map(([,v])=>v.weight))+'kg':'—'}</div><div class="ds-delta dn2">${(()=>{if(!allWts.length)return'';const minW=Math.min(...allWts.map(([,v])=>v.weight));const minEntry=allWts.find(([,v])=>v.weight===minW);if(!minEntry)return'';const d=new Date(minEntry[0]+'T00:00:00');return d.getMonth()+1+'월 '+d.getDate()+'일';})()}</div></div>`;
   document.getElementById('log-list').innerHTML=allRuns.map(([k,v])=>{
     const d=new Date(k+'T00:00:00');
     const lbl=`${d.getMonth()+1}/${d.getDate()}(${DOWK[d.getDay()]})`;
