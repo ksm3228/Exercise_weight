@@ -197,7 +197,7 @@
   </div>
 </div>
 <div class="cc" style="margin-bottom:16px"><div class="cc-title">월별 비교</div>
-  <div style="position:relative;width:100%;height:200px"><canvas id="mChart"></canvas></div>
+  <div style="position:relative;width:100%;height:260px"><canvas id="mChart"></canvas></div>
 </div>
     <div class="log-list"><div class="ll-title">운동 기록</div><div id="log-list"></div></div>
   </div>
@@ -577,7 +577,8 @@ function renderDash(){
         legend:{display:true,labels:{font:{size:10},boxWidth:12}},
         datalabels:{
           display:(ctx)=>ctx.datasetIndex===0,
-          anchor:'end',align:'top',
+          anchor:'end',align:'end',offset:4,
+
           formatter:(v,ctx)=>{
             const maxV=Math.max(...ctx.dataset.data);
             return v===maxV?`${v}km ★`:`${v}km`;
