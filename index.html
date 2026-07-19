@@ -595,7 +595,7 @@ function renderDash(){
       },
       scales:{
         x:{ticks:{font:{size:10}},grid:{display:false}},
-        y:{position:'left',ticks:{font:{size:9}},grid:{color:'rgba(128,128,128,0.08)'},title:{display:true,text:'km / 일수',font:{size:9}}},
+        y:{position:'left',ticks:{font:{size:9}},grid:{color:'rgba(128,128,128,0.08)'},title:{display:true,text:'km / 일수',font:{size:9}},max:Math.ceil((Math.max(...mKm)||70)*1.25)},
         y2:{position:'right',ticks:{font:{size:9}},grid:{display:false},title:{display:true,text:'체중(kg)',font:{size:9}},min:75,max:90}
       }}
 
