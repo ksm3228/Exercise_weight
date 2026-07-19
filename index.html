@@ -314,6 +314,8 @@ window._deleteFromFirestore = async (key) => {
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.2.0/chartjs-plugin-datalabels.min.js"></script>
 <script>
+ Chart.unregister(ChartDataLabels);
+
 const HEIGHT_M = 1.75;
 const STRENGTH_ITEMS = ['덤벨','바벨','케틀벨','스쿼트','데드리프트','벤치프레스','풀업','푸시업','런지','플랭크','랫풀다운','로우','숄더프레스','컬','트라이셉스','레그프레스','레그컬','케이블','기타'];
 const HOLIDAYS = {
