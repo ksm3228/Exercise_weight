@@ -568,7 +568,8 @@ function renderDash(){
   const mWt=mLabels.map(l=>monthlyData[l].wCnt?parseFloat((monthlyData[l].wSum/monthlyData[l].wCnt).toFixed(1)):null);
   if(mChartInst){mChartInst.destroy();mChartInst=null;}
   mChartInst=new Chart(document.getElementById('mChart'),{
-    type:'bar',
+        type:'bar',
+    plugins:[ChartDataLabels],
     data:{labels:mLabels,datasets:[
       {label:'총거리(km)',data:mKm,backgroundColor:'rgba(24,95,165,0.65)',borderRadius:3,yAxisID:'y'},
       {label:'운동일수',data:mDays,backgroundColor:'rgba(39,80,10,0.5)',borderRadius:3,yAxisID:'y'},
