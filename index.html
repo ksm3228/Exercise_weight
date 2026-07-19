@@ -571,13 +571,32 @@ function renderDash(){
       {label:'운동일수',data:mDays,backgroundColor:'rgba(39,80,10,0.5)',borderRadius:3,yAxisID:'y'},
       {label:'평균체중',data:mWt,type:'line',borderColor:'#A32D2D',backgroundColor:'transparent',tension:0.3,pointRadius:3,borderWidth:2,yAxisID:'y2'}
     ]},
-    options:{responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{display:true,labels:{font:{size:10},boxWidth:12}}},
+        options:{responsive:true,maintainAspectRatio:false,
+      plugins:{
+        legend:{display:true,labels:{font:{size:10},boxWidth:12}},
+        datalabels:{
+          display:(ctx)=>ctx.datasetIndex===0,
+          anchor:'end',align:'top',
+          formatter:(v,ctx)=>{
+            const maxV=Math.max(...ctx.dataset.data);
+            return v===maxV?`${v}km ★`:`${v}km`;
+          },
+          color:(ctx)=>{
+            const maxV=Math.max(...ctx.dataset.data);
+            return ctx.dataset.data[ctx.dataIndex]===maxV?'#A32D2D':'#185FA5';
+          },
+          font:{size:9,weight:(ctx)=>{
+            const maxV=Math.max(...ctx.dataset.data);
+            return ctx.dataset.data[ctx.dataIndex]===maxV?'bold':'normal';
+          }}
+        }
+      },
       scales:{
         x:{ticks:{font:{size:10}},grid:{display:false}},
         y:{position:'left',ticks:{font:{size:9}},grid:{color:'rgba(128,128,128,0.08)'},title:{display:true,text:'km / 일수',font:{size:9}}},
         y2:{position:'right',ticks:{font:{size:9}},grid:{display:false},title:{display:true,text:'체중(kg)',font:{size:9}},min:75,max:90}
       }}
+
   });
 }
 renderCal();
