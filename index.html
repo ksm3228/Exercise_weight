@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>운동 & 체중 기록</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  :root{--bg:#ffffff;--bg2:#f5f5f5;--bg3:#eeeeee;--text:#111111;--text2:#555555;--text3:#999999;--border:#e0e0e0;--border2:#cccccc;--blue:#185FA5;--blue-light:#E6F1FB;--blue-dark:#0C447C;--green-light:#EAF3DE;--green-dark:#27500A;--red:#A32D2D;--radius:8px;--radius-lg:12px;}
+  @media(prefers-color-scheme:dark){:root{--bg:#1a1a1a;--bg2:#242424;--bg3:#2e2e2e;--text:#f0f0f0;--text2:#aaaaaa;--text3:#666666;--border:#333333;--border2:#444444;--blue-light:#0d2d4a;--blue-dark:#85B7EB;--green-light:#1a2e0d;--green-dark:#97C459;}}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);font-size:14px;min-height:100vh}
+  #login-screen{display:flex;align-items:center;justify-content:center;min-height:100vh}
+  .login-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:40px 32px;text-align:center;max-width:360px;width:90%}
+  .login-card h1{font-size:20px;font-weight:500;margin-bottom:8px}
+  .login-card p{font-size:13px;color:var(--text2);margin-bottom:28px;line-height:1.6}
+  .btn-google{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:11px 20px;border:1px solid var(--border2);border-radius:var(--radius);background:var(--bg);color:var(--text);font-size:14px;font-weight:500;cursor:pointer;transition:background .15s}
+  .btn-google:hover{background:var(--bg3)}
+  .btn-google svg{width:18px;height:18px;flex-shrink:0}
+  .login-footer{font-size:11px;color:var(--text3);margin-top:20px}
+  #app-screen{display:none;max-width:900px;margin:0 auto;padding:16px}
+  .app-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;padding-bottom:12px;border-bottom:1px solid var(--border)}
+  .app-header h1{font-size:16px;font-weight:500}
+  .user-info{display:flex;align-items:center;gap:10px}
+  .user-avatar{width:30px;height:30px;border-radius:50%;border:1px solid var(--border)}
+  .user-name{font-size:13px;color:var(--text2)}
+  .btn-signout{font-size:12px;padding:4px 10px;border:1px solid var(--border);border-radius:var(--radius);background:none;color:var(--text2);cursor:pointer}
+  .btn-signout:hover{background:var(--bg2)}
+  .tab-bar{display:flex;gap:2px;margin-bottom:20px;border-bottom:1px solid var(--border)}
+  .tab{padding:8px 16px;font-size:13px;font-weight:500;color:var(--text2);cursor:pointer;border:none;border-bottom:2px solid transparent;margin-bottom:-1px;background:none}
+  .tab.active{color:var(--text);border-bottom-color:var(--blue)}
+  .tab:hover:not(.active){color:var(--text)}
+  .view{display:none}.view.active{display:block}
+  .cal-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+  .cal-title{font-size:16px;font-weight:500}
+  .cal-btns{display:flex;gap:6px}
+  .cal-btns button{border:1px solid var(--border2);border-radius:var(--radius);padding:4px 12px;font-size:12px;color:var(--text2);cursor:pointer;background:none}
+  .cal-btns button:hover{background:var(--bg2)}
+  .cal-wrapper{width:100%}
+  .dow-row{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:3px;width:100%}
+  .dow{text-align:center;font-size:11px;color:var(--text3);padding:6px 0;font-weight:500}
+  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+  .dc{border:1px solid var(--border);border-radius:var(--radius);padding:5px 6px;min-height:82px;background:var(--bg);cursor:pointer;transition:border-color .15s}
+  .dc:hover{border-color:var(--blue);background:var(--bg2)}
+  .dc.empty{background:transparent;border-color:transparent;cursor:default;pointer-events:none}
+  .dc.has-run{border-left:3px solid var(--blue);border-radius:0 var(--radius) var(--radius) 0}
+  .dc.today .dn{background:var(--blue);color:#fff;border-radius:50%}
+  .dn{font-size:11px;font-weight:500;color:var(--text2);width:20px;height:20px;display:flex;align-items:center;justify-content:center;margin-bottom:3px}
+  .dc.sat .dn,.dc.sun .dn{color:var(--red)}
+  .t-run{font-size:10px;background:var(--blue-light);color:var(--blue-dark);border-radius:4px;padding:2px 4px;margin-bottom:2px;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  /* ③ 페이스 태그 */
+  .t-pace{font-size:9px;color:var(--text3);padding:1px 0;white-space:nowrap}
+  .t-wt{font-size:10px;background:var(--green-light);color:var(--green-dark);border-radius:4px;padding:2px 4px;margin-bottom:2px}
+  .t-bmi{font-size:10px;color:var(--text3);padding:1px 0}
+  .t-strength{font-size:10px;background:#F3EAF9;color:#5B2D8E;border-radius:4px;padding:2px 4px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .holiday-label{font-size:9px;color:var(--red);font-weight:500;margin-bottom:2px}
+  .dc.min-weight{border:2px solid var(--red)!important;border-radius:var(--radius)!important;}
+  .cal-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px}
+  .cs{background:var(--bg2);border-radius:var(--radius);padding:10px 12px}
+  .cs-label{font-size:11px;color:var(--text2);margin-bottom:4px}
+  .cs-val{font-size:20px;font-weight:500}
+  .cs-sub{font-size:10px;color:var(--text3);margin-top:2px}
+  .month-filter{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap}
+  .mf-btn{border:1px solid var(--border2);border-radius:20px;padding:4px 12px;font-size:12px;color:var(--text2);cursor:pointer;background:none}
+  .mf-btn.active{background:var(--blue);color:#fff;border-color:var(--blue)}
+  .mf-btn:hover:not(.active){background:var(--bg2)}
+  .db-stats{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:16px}
+  .ds{background:var(--bg2);border-radius:var(--radius);padding:10px 12px}
+  .ds-label{font-size:11px;color:var(--text2);margin-bottom:4px}
+  .ds-val{font-size:20px;font-weight:500}
+  .ds-delta{font-size:10px;margin-top:3px}
+  .dg{color:var(--green-dark)}.db{color:var(--red)}.dn2{color:var(--text3)}
+  .db-charts{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
+  .cc{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px}
+  .cc-title{font-size:12px;font-weight:500;color:var(--text2);margin-bottom:10px}
+  .log-list{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px}
+  .ll-title{font-size:12px;font-weight:500;color:var(--text2);margin-bottom:10px}
+  .ll-row{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--border);font-size:12px}
+  .ll-row:last-child{border-bottom:none}
+  .ll-row.best-pace{background:rgba(39,80,10,0.08);border-radius:6px;padding-left:6px;}
+  .ll-date{color:var(--text2);width:85px;flex-shrink:0}
+  .ll-km{font-weight:500;width:50px;flex-shrink:0}
+  .ll-bar-bg{flex:1;height:5px;background:var(--bg2);border-radius:3px;overflow:hidden}
+  .ll-bar-fill{height:100%;border-radius:3px;background:var(--blue)}
+  .ll-min{color:var(--text3);width:40px;text-align:right;flex-shrink:0}
+  .ll-pace{width:60px;text-align:right;flex-shrink:0;font-size:11px}
+  .ll-pace.best{color:var(--green-dark);font-weight:600}
+  .ll-pace.normal{color:var(--text3)}
+  .modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);align-items:center;justify-content:center;z-index:200}
+  .modal-bg.open{display:flex}
+  .modal{background:var(--bg);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:20px;width:360px;max-width:95vw;max-height:90vh;overflow-y:auto}
+  .modal-title{font-size:15px;font-weight:500;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center}
+  .modal-close{background:none;border:none;font-size:20px;cursor:pointer;color:var(--text2);line-height:1}
+  .modal-close:hover{color:var(--text)}
+  .form-section{margin-bottom:14px}
+  .form-label{font-size:12px;font-weight:500;color:var(--text2);margin-bottom:6px;display:block}
+  .form-row2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .form-row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+  input[type=number],input[type=text],select{width:100%;padding:7px 10px;font-size:13px;border:1px solid var(--border2);border-radius:var(--radius);background:var(--bg);color:var(--text)}
+  input:focus,select:focus{outline:none;border-color:var(--blue)}
+  .form-hint{font-size:11px;color:var(--text3);margin-top:4px}
+  .pace-preview{font-size:12px;color:var(--blue);margin-top:5px;min-height:16px;font-weight:500}
+  .divider{height:1px;background:var(--border);margin:14px 0}
+  .modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:16px}
+  .btn-cancel{padding:7px 14px;font-size:13px;border:1px solid var(--border);border-radius:var(--radius);background:none;color:var(--text2);cursor:pointer}
+  .btn-cancel:hover{background:var(--bg2)}
+  .btn-save{padding:7px 18px;font-size:13px;border:none;border-radius:var(--radius);background:var(--blue);color:#fff;cursor:pointer;font-weight:500}
+  .btn-save:hover{background:var(--blue-dark)}
+  .btn-delete{padding:7px 14px;font-size:13px;border:1px solid #e53e3e;border-radius:var(--radius);background:none;color:#e53e3e;cursor:pointer}
+  .btn-delete:hover{background:#fff5f5}
+  .saving-indicator{font-size:11px;color:var(--text3);margin-top:8px;text-align:center;min-height:16px}
+  .strength-header{display:grid;grid-template-columns:1fr 60px 50px 50px 28px;gap:5px;margin-bottom:4px}
+  .strength-header span{font-size:10px;color:var(--text3);text-align:center}
+  .strength-header span:first-child{text-align:left}
+  .strength-row{display:grid;grid-template-columns:1fr 60px 50px 50px 28px;gap:5px;align-items:center;margin-bottom:6px}
+  .strength-row select,.strength-row input{padding:6px 8px;font-size:12px;border:1px solid var(--border2);border-radius:var(--radius);background:var(--bg);color:var(--text)}
+  .strength-row select:focus,.strength-row input:focus{outline:none;border-color:#7C3DAD}
+  .btn-add-set{width:100%;padding:7px;font-size:12px;border:1px dashed var(--border2);border-radius:var(--radius);background:none;color:var(--text2);cursor:pointer;margin-top:2px}
+  .btn-add-set:hover{background:var(--bg2)}
+  .btn-remove-set{background:none;border:none;color:var(--text3);cursor:pointer;font-size:16px;line-height:1;padding:0}
+  .btn-remove-set:hover{color:var(--red)}
+  @media(max-width:600px){.db-stats{grid-template-columns:1fr 1fr}.db-charts{grid-template-columns:1fr}.cal-summary{grid-template-columns:1fr 1fr}#app-screen{padding:10px}}
+</style>
+</head>
+<body>
+
+<div id="login-screen">
+  <div class="login-card">
+    <h1>🏃 운동 & 체중 기록 <span style="font-size:11px;color:var(--text3);font-weight:400">v2.1</span></h1>
+    <p>구글 계정으로 로그인하면<br>모든 기기에서 데이터가 동기화됩니다</p>
+    <button class="btn-google" onclick="signInWithGoogle()">
+      <svg viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+      Google로 로그인
+    </button>
+    <div class="login-footer">로그인 시 Firebase에 데이터가 안전하게 저장됩니다</div>
+  </div>
+</div>
+
+<div id="app-screen">
+  <div class="app-header">
+    <h1>🏃 운동 & 체중 기록 <span style="font-size:11px;color:var(--text3);font-weight:400">v2.1</span></h1>
+    <div class="user-info">
+      <img class="user-avatar" id="user-avatar" src="" alt="">
+      <span class="user-name" id="user-name"></span>
+      <button class="btn-signout" onclick="signOut()">로그아웃</button>
+    </div>
+  </div>
+  <div class="tab-bar">
+    <button class="tab active" onclick="switchTab('cal')">📅 캘린더</button>
+    <button class="tab" onclick="switchTab('dash')">📊 대시보드</button>
+  </div>
+  <div id="view-cal" class="view active">
+    <div class="cal-nav">
+      <span class="cal-title" id="cal-title"></span>
+      <div class="cal-btns">
+        <button onclick="prevMonth()">◀</button>
+        <button onclick="goToday()">오늘</button>
+        <button onclick="nextMonth()">▶</button>
+      </div>
+    </div>
+
+    <div class="cal-wrapper">
+      <div class="dow-row">
+        <div class="dow" style="color:var(--red)">일</div>
+        <div class="dow">월</div><div class="dow">화</div><div class="dow">수</div>
+        <div class="dow">목</div><div class="dow">금</div>
+        <div class="dow" style="color:var(--red)">토</div>
+      </div>
+      <div class="cal-grid" id="cal-grid"></div>
+    </div>
+    <div class="cal-summary" id="cal-summary"></div>
+  </div>
+  <div id="view-dash" class="view">
+    <div class="month-filter" id="month-filter"></div>
+    <div class="db-stats" id="db-stats"></div>
+    <div class="db-charts">
+      <div class="cc"><div class="cc-title">체중 추이</div>
+        <div style="position:relative;width:100%;height:160px"><canvas id="wChart"></canvas></div>
+      </div>
+      <div class="cc"><div class="cc-title">운동 거리 (km)</div>
+        <div style="position:relative;width:100%;height:160px"><canvas id="rChart"></canvas></div>
+      </div>
+    </div>
+    <!-- ④ 페이스 추세 차트 -->
+    <div class="cc" style="margin-bottom:16px"><div class="cc-title">페이스 추세 (분/km) — 낮을수록 빠름</div>
+      <div style="position:relative;width:100%;height:160px"><canvas id="pChart"></canvas></div>
+    </div>
+    <div class="cc" style="margin-bottom:16px"><div class="cc-title">월별 비교</div>
+      <div style="position:relative;width:100%;height:260px"><canvas id="mChart"></canvas></div>
+    </div>
+    <div class="log-list"><div class="ll-title">운동 기록</div><div id="log-list"></div></div>
+  </div>
+</div>
+
+<div class="modal-bg" id="modal-bg">
+  <div class="modal">
+    <div class="modal-title">
+      <span id="modal-date-title"></span>
+      <button class="modal-close" onclick="closeModal()">×</button>
+    </div>
+    <div class="form-section">
+      <label class="form-label">🏃 걷기 / 달리기</label>
+      <div class="form-row3">
+        <input type="number" id="f-km" placeholder="거리 km" step="0.1" min="0">
+        <input type="number" id="f-min" placeholder="시간 분" min="0">
+        <select id="f-type"><option value="달리기">달리기</option><option value="걷기">걷기</option></select>
+      </div>
+      <div class="pace-preview" id="pace-preview"></div>
+    </div>
+    <div class="divider"></div>
+    <div class="form-section">
+      <label class="form-label">💪 근력운동</label>
+      <div class="strength-header">
+        <span>종목</span><span>무게(kg)</span><span>횟수</span><span>세트</span><span></span>
+      </div>
+      <div id="strength-list"></div>
+      <button class="btn-add-set" onclick="addStrengthRow()">+ 종목 추가</button>
+    </div>
+    <div class="divider"></div>
+    <div class="form-section">
+      <label class="form-label">⚖️ 체중 / BMI</label>
+      <div class="form-row2">
+        <input type="number" id="f-weight" placeholder="체중 kg" step="0.1" min="40" max="200">
+        <input type="number" id="f-bmi" placeholder="BMI" step="0.1">
+      </div>
+      <div class="form-hint">체중 입력 시 BMI 자동 계산 (신장 175cm 기준)</div>
+    </div>
+    <div class="saving-indicator" id="saving-indicator"></div>
+    <div class="modal-actions" id="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">취소</button>
+      <button class="btn-save" onclick="saveEntry()">저장</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut as fbSignOut }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getFirestore, doc, collection, setDoc, deleteDoc, onSnapshot }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+const firebaseConfig={apiKey:"AIzaSyC9k6iGUcNObjxQGtlVOuP5_YSpErT9DtA",authDomain:"ward-app-257c4.firebaseapp.com",databaseURL:"https://ward-app-257c4-default-rtdb.asia-southeast1.firebasedatabase.app",projectId:"ward-app-257c4",storageBucket:"ward-app-257c4.firebasestorage.app",messagingSenderId:"261869081149",appId:"1:261869081149:web:f031aba266139f76861054"};
+const app=initializeApp(firebaseConfig),auth=getAuth(app),db=getFirestore(app);
+let unsubscribe=null;
+window.signInWithGoogle=async()=>{try{await signInWithPopup(auth,new GoogleAuthProvider());}catch(e){alert("로그인 오류: "+e.message);}};
+window.signOut=async()=>{if(unsubscribe)unsubscribe();await fbSignOut(auth);};
+onAuthStateChanged(auth,user=>{
+  if(user){
+    document.getElementById('login-screen').style.display='none';
+    document.getElementById('app-screen').style.display='block';
+    document.getElementById('user-avatar').src=user.photoURL||'';
+    document.getElementById('user-name').textContent=user.displayName||user.email;
+    const colRef=collection(db,'users',user.uid,'entries');
+    if(unsubscribe)unsubscribe();
+    unsubscribe=onSnapshot(colRef,snapshot=>{
+      snapshot.docChanges().forEach(change=>{
+        if(change.type==='removed')delete window.DATA[change.doc.id];
+        else window.DATA[change.doc.id]=change.doc.data();
+      });
+      renderCal();
+      if(document.getElementById('view-dash').classList.contains('active'))renderDash();
+    });
+  }else{
+    document.getElementById('login-screen').style.display='flex';
+    document.getElementById('app-screen').style.display='none';
+    window.DATA={};
+  }
+});
+window._saveToFirestore=async(key,entry)=>{const user=auth.currentUser;if(!user)return;await setDoc(doc(db,'users',user.uid,'entries',key),entry);};
+window._deleteFromFirestore=async(key)=>{const user=auth.currentUser;if(!user)return;await deleteDoc(doc(db,'users',user.uid,'entries',key));};
+</script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.2.0/chartjs-plugin-datalabels.min.js"></script>
+<script>
+// datalabels는 월별 비교에만 사용
+Chart.unregister(ChartDataLabels);
+
+const HEIGHT_M=1.75;
+const STRENGTH_ITEMS=['덤벨','바벨','케틀벨','스쿼트','데드리프트','벤치프레스','풀업','푸시업','런지','플랭크','랫풀다운','로우','숄더프레스','컬','트라이셉스','레그프레스','레그컬','케이블','기타'];
+const HOLIDAYS={"2026-01-01":"새해","2026-01-27":"설연휴","2026-01-28":"설날","2026-01-29":"설연휴","2026-03-01":"삼일절","2026-05-05":"어린이날","2026-06-06":"현충일","2026-08-15":"광복절","2026-10-03":"개천절","2026-10-09":"한글날","2026-12-25":"성탄절"};
+const DOWK=['일','월','화','수','목','금','토'];
+window.DATA={};
+let curYear=new Date().getFullYear(),curMonth=new Date().getMonth()+1;
+let dashMonth='all',activeKey=null;
+let wChartInst=null,rChartInst=null,pChartInst=null,mChartInst=null;
+let tempStrength=[];
+const todayObj=new Date();
+
+// ① 페이스 계산 유틸
+function calcPace(km,min){
+  if(!km||!min||km<=0||min<=0)return null;
+  return min/km; // 분/km (소수)
+}
+function fmtPace(p){
+  if(!p)return '';
+  const pm=Math.floor(p),ps=Math.round((p-pm)*60);
+  return `${pm}'${String(ps).padStart(2,'0')}"`;
+}
+
+function key(y,m,d){return `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`}
+function daysInMonth(y,m){return new Date(y,m,0).getDate()}
+function firstDow(y,m){return new Date(y,m-1,1).getDay()}
+
+function switchTab(t){
+  document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active',b.getAttribute('onclick').includes("'"+t+"'")));
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.getElementById('view-'+t).classList.add('active');
+  if(t==='dash')renderDash();
+}
+
+function renderStrengthList(){
+  const el=document.getElementById('strength-list');el.innerHTML='';
+  tempStrength.forEach((s,i)=>{
+    const row=document.createElement('div');row.className='strength-row';
+    row.innerHTML=`<select onchange="updateStrength(${i},'name',this.value)">${STRENGTH_ITEMS.map(it=>`<option${s.name===it?' selected':''}>${it}</option>`).join('')}</select>
+      <input type="number" value="${s.kg||''}" placeholder="kg" step="0.5" min="0" oninput="updateStrength(${i},'kg',this.value)">
+      <input type="number" value="${s.reps||''}" placeholder="횟수" min="1" oninput="updateStrength(${i},'reps',this.value)">
+      <input type="number" value="${s.sets||''}" placeholder="세트" min="1" oninput="updateStrength(${i},'sets',this.value)">
+      <button class="btn-remove-set" onclick="removeStrength(${i})">×</button>`;
+    el.appendChild(row);
+  });
+}
+window.addStrengthRow=function(){tempStrength.push({name:'덤벨',kg:'',reps:'',sets:''});renderStrengthList();};
+window.updateStrength=function(i,field,val){tempStrength[i][field]=field==='name'?val:(parseFloat(val)||'');};
+window.removeStrength=function(i){tempStrength.splice(i,1);renderStrengthList();};
+
+function openModal(k){
+  activeKey=k;
+  const d=new Date(k+'T00:00:00');
+  document.getElementById('modal-date-title').textContent=`${d.getMonth()+1}월 ${d.getDate()}일 (${DOWK[d.getDay()]})`;
+  const info=DATA[k]||{};
+  document.getElementById('f-km').value=info.run&&info.run.km>0?info.run.km:'';
+  document.getElementById('f-min').value=info.run&&info.run.min>0?info.run.min:'';
+  document.getElementById('f-type').value=info.run&&info.run.type?info.run.type:'달리기';
+  document.getElementById('f-weight').value=info.weight||'';
+  document.getElementById('f-bmi').value=info.bmi||'';
+  document.getElementById('saving-indicator').textContent='';
+  tempStrength=info.strength?JSON.parse(JSON.stringify(info.strength)):[];
+  renderStrengthList();updatePacePreview();
+  document.getElementById('modal-actions').innerHTML=DATA[k]
+    ?`<button class="btn-delete" onclick="deleteEntry()">🗑 삭제</button><button class="btn-cancel" onclick="closeModal()">취소</button><button class="btn-save" onclick="saveEntry()">저장</button>`
+    :`<button class="btn-cancel" onclick="closeModal()">취소</button><button class="btn-save" onclick="saveEntry()">저장</button>`;
+  document.getElementById('modal-bg').classList.add('open');
+}
+window.closeModal=function(){document.getElementById('modal-bg').classList.remove('open');activeKey=null;};
+document.getElementById('modal-bg').addEventListener('click',e=>{if(e.target===document.getElementById('modal-bg'))closeModal();});
+
+function updatePacePreview(){
+  const km=parseFloat(document.getElementById('f-km').value);
+  const min=parseFloat(document.getElementById('f-min').value);
+  const el=document.getElementById('pace-preview');
+  const p=calcPace(km,min);
+  el.textContent=p?`페이스 ${fmtPace(p)} /km`:'';
+  const wt=parseFloat(document.getElementById('f-weight').value);
+  if(wt>0)document.getElementById('f-bmi').value=(wt/(HEIGHT_M*HEIGHT_M)).toFixed(1);
+}
+document.getElementById('f-km').addEventListener('input',updatePacePreview);
+document.getElementById('f-min').addEventListener('input',updatePacePreview);
+document.getElementById('f-weight').addEventListener('input',updatePacePreview);
+
+window.saveEntry=async function(){
+  if(!activeKey)return;
+  const km=parseFloat(document.getElementById('f-km').value);
+  const min=parseFloat(document.getElementById('f-min').value);
+  const type=document.getElementById('f-type').value;
+  const weight=parseFloat(document.getElementById('f-weight').value);
+  const bmi=parseFloat(document.getElementById('f-bmi').value);
+  const entry={};
+  if(km>0||min>0)entry.run={km:km||0,min:min||0,type,label:(km>0?km+'km':'')+(min>0?`(${min}분)`:'')};
+  const validSets=tempStrength.filter(s=>s.name&&(s.kg||s.reps||s.sets));
+  if(validSets.length>0)entry.strength=validSets;
+  if(weight>0)entry.weight=weight;
+  if(bmi>0)entry.bmi=parseFloat(bmi.toFixed(1));
+  const ind=document.getElementById('saving-indicator');
+  ind.textContent='저장 중…';
+  try{
+    if(Object.keys(entry).length>0)await window._saveToFirestore(activeKey,entry);
+    else await window._deleteFromFirestore(activeKey);
+    ind.textContent='✓ 저장됨';setTimeout(closeModal,600);
+  }catch(e){ind.textContent='⚠️ 저장 실패: '+e.message;}
+};
+window.deleteEntry=async function(){
+  if(!activeKey)return;
+  const ind=document.getElementById('saving-indicator');ind.textContent='삭제 중…';
+  try{await window._deleteFromFirestore(activeKey);setTimeout(closeModal,400);}
+  catch(e){ind.textContent='⚠️ 오류: '+e.message;}
+};
+
+// ── Calendar ───────────────────────────────────────────────
+function renderCal(){
+  document.getElementById('cal-title').textContent=`${curYear}년 ${curMonth}월`;
+  const grid=document.getElementById('cal-grid');grid.innerHTML='';
+  const fd=firstDow(curYear,curMonth),days=daysInMonth(curYear,curMonth);
+
+  for(let i=0;i<fd;i++){const e=document.createElement('div');e.className='dc empty';grid.appendChild(e);}
+
+  const allTimeMinW=Object.values(DATA).filter(v=>v.weight).length
+    ?Math.min(...Object.values(DATA).filter(v=>v.weight).map(v=>v.weight)):null;
+
+  // ④ 최고 페이스 계산 (달리기만, 낮을수록 빠름)
+  const allPaces=Object.values(DATA)
+    .filter(v=>v.run&&v.run.km>0&&v.run.min>0&&v.run.type!=='걷기')
+    .map(v=>calcPace(v.run.km,v.run.min))
+    .filter(Boolean);
+  const bestPace=allPaces.length?Math.min(...allPaces):null;
+
+  let runCount=0,totalKm=0,weights=[];
+  for(let d=1;d<=days;d++){
+    const k=key(curYear,curMonth,d),info=DATA[k]||{},dow=(fd+d-1)%7;
+    const isToday=todayObj.getFullYear()===curYear&&todayObj.getMonth()+1===curMonth&&todayObj.getDate()===d;
+    let cls='dc';
+    if(dow===0)cls+=' sun';if(dow===6)cls+=' sat';
+    if(info.run||info.strength)cls+=' has-run';
+    if(isToday)cls+=' today';
+    if(info.weight&&info.weight===allTimeMinW)cls+=' min-weight';
+    const cell=document.createElement('div');cell.className=cls;
+    cell.setAttribute('role','button');cell.onclick=()=>openModal(k);
+    let html=`<div class="dn">${d}</div>`;
+    if(HOLIDAYS[k])html+=`<div class="holiday-label">${HOLIDAYS[k]}</div>`;
+    if(info.run){
+      runCount++;if(info.run.km>0)totalKm+=info.run.km;
+      html+=`<div class="t-run">${info.run.label}</div>`;
+      // ③ 페이스 캘린더에 표시
+      const p=calcPace(info.run.km,info.run.min);
+      if(p&&info.run.type!=='걷기'){
+        const isBest=bestPace&&Math.abs(p-bestPace)<0.001;
+        html+=`<div class="t-pace" style="${isBest?'color:var(--green-dark);font-weight:600':''}">${fmtPace(p)}/km${isBest?' ★':''}</div>`;
+      }
+    }
+    if(info.strength&&info.strength.length>0){
+      const grouped={};
+      info.strength.forEach(s=>{if(!grouped[s.name])grouped[s.name]=0;if(s.kg>grouped[s.name])grouped[s.name]=s.kg;});
+      html+=`<div class="t-strength">💪 ${Object.entries(grouped).map(([n,kg])=>kg>0?`${n} ${kg}kg`:n).join('·')}</div>`;
+    }
+    if(info.weight){weights.push(info.weight);html+=`<div class="t-wt">${info.weight}kg</div>`;}
+    if(info.bmi)html+=`<div class="t-bmi">BMI ${parseFloat(info.bmi).toFixed(1)}</div>`;
+    cell.innerHTML=html;grid.appendChild(cell);
+  }
+  const firstW=weights[0]||null,lastW=weights[weights.length-1]||null;
+  const diff=firstW&&lastW?(lastW-firstW).toFixed(1):null;
+  document.getElementById('cal-summary').innerHTML=`
+    <div class="cs"><div class="cs-label">운동 횟수</div><div class="cs-val">${runCount}회</div></div>
+    <div class="cs"><div class="cs-label">총 거리</div><div class="cs-val">${totalKm.toFixed(1)}km</div></div>
+    <div class="cs"><div class="cs-label">이달 첫 체중</div><div class="cs-val">${firstW?firstW+'kg':'—'}</div></div>
+    <div class="cs"><div class="cs-label">체중 변화</div><div class="cs-val">${diff?(parseFloat(diff)>0?'+':'')+diff+'kg':'—'}</div><div class="cs-sub">${lastW?'현재 '+lastW+'kg':''}</div></div>`;
+}
+function prevMonth(){curMonth--;if(curMonth<1){curMonth=12;curYear--;}renderCal();}
+function nextMonth(){curMonth++;if(curMonth>12){curMonth=1;curYear++;}renderCal();}
+function goToday(){curYear=todayObj.getFullYear();curMonth=todayObj.getMonth()+1;renderCal();}
+
+// ── Dashboard ──────────────────────────────────────────────
+function buildMonthFilter(){
+  const months=[{v:'all',l:'전체'},{v:'1',l:'1월'},{v:'2',l:'2월'},{v:'3',l:'3월'},{v:'4',l:'4월'},{v:'5',l:'5월'},{v:'6',l:'6월'},{v:'7',l:'7월'},{v:'8',l:'8월'},{v:'9',l:'9월'},{v:'10',l:'10월'},{v:'11',l:'11월'},{v:'12',l:'12월'}];
+  document.getElementById('month-filter').innerHTML=months.map(m=>`<button class="mf-btn${dashMonth===m.v?' active':''}" onclick="setDashMonth('${m.v}')">${m.l}</button>`).join('');
+}
+function setDashMonth(m){dashMonth=m;renderDash();}
+function getFilteredData(){
+  return Object.entries(DATA).filter(([k])=>{
+    if(dashMonth==='all')return true;
+    return parseInt(k.split('-')[1])===parseInt(dashMonth);
+  }).sort(([a],[b])=>a.localeCompare(b));
+}
+
+function renderDash(){
+  buildMonthFilter();
+  const all=getFilteredData();
+  const allRuns=all.filter(([,v])=>v.run&&v.run.km>0);
+  const allWts=all.filter(([,v])=>v.weight);
+  const totalKm=allRuns.reduce((s,[,v])=>s+v.run.km,0);
+  const avgKm=allRuns.length?totalKm/allRuns.length:0;
+  const firstW=allWts.length?allWts[0][1].weight:null;
+  const lastW=allWts.length?allWts[allWts.length-1][1].weight:null;
+  const diff=firstW&&lastW?(lastW-firstW).toFixed(1):null;
+  const maxKm=allRuns.length?Math.max(...allRuns.map(([,v])=>v.run.km)):10;
+
+  // ④ 페이스 통계
+  const paceRuns=allRuns.filter(([,v])=>v.run.type!=='걷기'&&v.run.km>0&&v.run.min>0);
+  const paceList=paceRuns.map(([k,v])=>({k,p:calcPace(v.run.km,v.run.min)})).filter(x=>x.p);
+  const bestP=paceList.length?Math.min(...paceList.map(x=>x.p)):null;
+
+  const minWval=allWts.length?Math.min(...allWts.map(([,v])=>v.weight)):null;
+  const minWentry=minWval?allWts.find(([,v])=>v.weight===minWval):null;
+  const minWdate=minWentry?(()=>{const d=new Date(minWentry[0]+'T00:00:00');return `${d.getMonth()+1}월 ${d.getDate()}일`;})():'';
+
+  document.getElementById('db-stats').innerHTML=`
+    <div class="ds"><div class="ds-label">운동 횟수</div><div class="ds-val">${allRuns.length}회</div><div class="ds-delta dn2">평균 ${avgKm.toFixed(1)}km/회</div></div>
+    <div class="ds"><div class="ds-label">총 거리</div><div class="ds-val">${totalKm.toFixed(1)}km</div></div>
+    <div class="ds"><div class="ds-label">첫 기록 체중</div><div class="ds-val">${firstW?firstW+'kg':'—'}</div></div>
+    <div class="ds"><div class="ds-label">체중 변화</div><div class="ds-val">${lastW?lastW+'kg':'—'}</div><div class="ds-delta ${diff&&parseFloat(diff)<0?'dg':'db'}">${diff?(parseFloat(diff)>0?'+':'')+diff+'kg':'—'}</div></div>
+    <div class="ds"><div class="ds-label">최저 체중</div><div class="ds-val" style="color:var(--green-dark)">${minWval?minWval+'kg':'—'}</div><div class="ds-delta dn2">${minWdate}</div></div>`;
+
+  // 운동 기록 목록 (페이스 하이라이트)
+  document.getElementById('log-list').innerHTML=allRuns.map(([k,v])=>{
+    const d=new Date(k+'T00:00:00');
+    const lbl=`${d.getMonth()+1}/${d.getDate()}(${DOWK[d.getDay()]})`;
+    const p=calcPace(v.run.km,v.run.min);
+    const isBest=bestP&&p&&Math.abs(p-bestP)<0.001&&v.run.type!=='걷기';
+    const paceStr=p?fmtPace(p)+'/km':'';
+    return `<div class="ll-row${isBest?' best-pace':''}">
+      <span class="ll-date">${lbl}</span>
+      <span class="ll-km">${v.run.km.toFixed(1)}km</span>
+      <div class="ll-bar-bg"><div class="ll-bar-fill" style="width:${Math.round(v.run.km/maxKm*100)}%"></div></div>
+      <span class="ll-min">${v.run.min}분</span>
+      <span class="ll-pace ${isBest?'best':'normal'}">${isBest?'★ ':''} ${paceStr}</span>
+    </div>`;
+  }).join('')||'<p style="font-size:12px;color:var(--text3);padding:8px 0">기록이 없습니다</p>';
+
+  const wLabels=allWts.map(([k])=>{const d=new Date(k+'T00:00:00');return `${d.getMonth()+1}/${d.getDate()}`});
+  const wVals=allWts.map(([,v])=>v.weight);
+  const rLabels=allRuns.map(([k])=>{const d=new Date(k+'T00:00:00');return `${d.getMonth()+1}/${d.getDate()}`});
+  const rVals=allRuns.map(([,v])=>v.run.km);
+
+  // ④ 페이스 추세 데이터
+  const pLabels=paceList.map(({k})=>{const d=new Date(k+'T00:00:00');return `${d.getMonth()+1}/${d.getDate()}`});
+  const pVals=paceList.map(({p})=>parseFloat(p.toFixed(2)));
+  const pColors=paceList.map(({p})=>p===bestP?'#27500A':'rgba(24,95,165,0.65)');
+  const pRadii=paceList.map(({p})=>p===bestP?5:2);
+
+  if(wChartInst){wChartInst.destroy();wChartInst=null;}
+  if(rChartInst){rChartInst.destroy();rChartInst=null;}
+  if(pChartInst){pChartInst.destroy();pChartInst=null;}
+  if(mChartInst){mChartInst.destroy();mChartInst=null;}
+
+  const wMin=wVals.length?Math.floor(Math.min(...wVals))-1:78,wMax=wVals.length?Math.ceil(Math.max(...wVals))+1:84;
+  wChartInst=new Chart(document.getElementById('wChart'),{type:'line',data:{labels:wLabels,datasets:[{label:'체중',data:wVals,borderColor:'#185FA5',backgroundColor:'rgba(24,95,165,0.07)',tension:0.3,pointRadius:2,borderWidth:1.5,fill:true}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{font:{size:9},maxRotation:45,autoSkip:true,maxTicksLimit:8},grid:{display:false}},y:{min:wMin,max:wMax,ticks:{font:{size:9},stepSize:1},grid:{color:'rgba(128,128,128,0.08)'}}}}});
+
+  const rMax=rVals.length?Math.ceil(Math.max(...rVals))+2:12;
+  rChartInst=new Chart(document.getElementById('rChart'),{type:'bar',data:{labels:rLabels,datasets:[{label:'km',data:rVals,backgroundColor:'rgba(24,95,165,0.65)',borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{font:{size:9},maxRotation:45,autoSkip:true,maxTicksLimit:14},grid:{display:false}},y:{min:0,max:rMax,ticks:{font:{size:9},stepSize:1},grid:{color:'rgba(128,128,128,0.08)'}}}}});
+
+  // ④ 페이스 추세 차트
+  if(pVals.length>0){
+    const pMin=Math.floor(Math.min(...pVals)*10)/10-0.5;
+    const pMax=Math.ceil(Math.max(...pVals)*10)/10+0.5;
+    pChartInst=new Chart(document.getElementById('pChart'),{
+      type:'line',
+      data:{labels:pLabels,datasets:[{
+        label:'페이스(분/km)',data:pVals,
+        borderColor:'#185FA5',backgroundColor:'rgba(24,95,165,0.07)',
+        tension:0.3,borderWidth:1.5,fill:true,
+        pointBackgroundColor:pColors,pointRadius:pRadii,pointBorderWidth:0
+      }]},
+      options:{responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{display:false},tooltip:{callbacks:{label:(ctx)=>`${fmtPace(ctx.parsed.y)}/km`}}},
+        scales:{
+          x:{ticks:{font:{size:9},maxRotation:45,autoSkip:true,maxTicksLimit:10},grid:{display:false}},
+          y:{reverse:true,min:pMin,max:pMax,ticks:{font:{size:9},callback:(v)=>fmtPace(v)},grid:{color:'rgba(128,128,128,0.08)'},title:{display:true,text:'분/km (낮을수록 빠름)',font:{size:9}}}
+        }}
+    });
+  }
+
+  // 월별 비교
+  const monthlyData={};
+  Object.entries(DATA).forEach(([k,v])=>{
+    const m=parseInt(k.split('-')[1]);
+    const label=`${m}월`;
+    if(!monthlyData[label])monthlyData[label]={km:0,days:0,wSum:0,wCnt:0};
+    if(v.run&&v.run.km>0){monthlyData[label].km+=v.run.km;monthlyData[label].days++;}
+    if(v.weight){monthlyData[label].wSum+=v.weight;monthlyData[label].wCnt++;}
+  });
+  const mLabels=Object.keys(monthlyData).sort((a,b)=>parseInt(a)-parseInt(b));
+  const mKm=mLabels.map(l=>parseFloat(monthlyData[l].km.toFixed(1)));
+  const mDays=mLabels.map(l=>monthlyData[l].days);
+  const mWt=mLabels.map(l=>monthlyData[l].wCnt?parseFloat((monthlyData[l].wSum/monthlyData[l].wCnt).toFixed(1)):null);
+  const maxMKm=mKm.length?Math.max(...mKm):0;
+  const wMin2=mWt.filter(Boolean).length?Math.floor(Math.min(...mWt.filter(Boolean)))-2:75;
+  const wMax2=mWt.filter(Boolean).length?Math.ceil(Math.max(...mWt.filter(Boolean)))+2:90;
+  const yMax=Math.ceil(maxMKm*1.25);
+
+  mChartInst=new Chart(document.getElementById('mChart'),{
+    type:'bar',
+    plugins:[ChartDataLabels],
+    data:{labels:mLabels,datasets:[
+      {label:'총거리(km)',data:mKm,backgroundColor:mKm.map(v=>v===maxMKm?'rgba(163,45,45,0.8)':'rgba(24,95,165,0.65)'),borderRadius:3,yAxisID:'y'},
+      {label:'운동일수',data:mDays,backgroundColor:'rgba(39,80,10,0.5)',borderRadius:3,yAxisID:'y'},
+      {label:'평균체중',data:mWt,type:'line',borderColor:'#A32D2D',backgroundColor:'transparent',tension:0.3,pointRadius:3,borderWidth:2,yAxisID:'y2'}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{
+        legend:{display:true,labels:{font:{size:10},boxWidth:12}},
+        datalabels:{
+          display:(ctx)=>ctx.datasetIndex===0,
+          anchor:'end',align:'top',offset:2,
+          formatter:(v)=>v===maxMKm?`${v}★`:`${v}`,
+          color:(ctx)=>ctx.dataset.data[ctx.dataIndex]===maxMKm?'#A32D2D':'#185FA5',
+          font:(ctx)=>({size:9,weight:ctx.dataset.data[ctx.dataIndex]===maxMKm?'bold':'normal'})
+        }
+      },
+      scales:{
+        x:{ticks:{font:{size:10}},grid:{display:false}},
+        y:{position:'left',max:yMax,ticks:{font:{size:9}},grid:{color:'rgba(128,128,128,0.08)'},title:{display:true,text:'km / 일수',font:{size:9}}},
+        y2:{position:'right',ticks:{font:{size:9}},grid:{display:false},title:{display:true,text:'체중(kg)',font:{size:9}},min:wMin2,max:wMax2}
+      }}
+  });
+}
+renderCal();
+</script>
+</body>
+</html>
